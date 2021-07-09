@@ -1,0 +1,245 @@
+CREATE TABLE booked_seats (
+    Seat_Id                     Number(5) Not Null,
+    booking_id                  NUMBER(5) NOT NULL
+);
+
+ALTER TABLE booked_seats
+    ADD CONSTRAINT booked_seats_pk PRIMARY KEY ( seat_id,
+                                                 booking_id);
+
+CREATE TABLE booking (
+    booking_id                                NUMBER(5) NOT NULL,
+    booking_at_date                           DATE,
+    customer_paid_time                        DATE,
+    Seats                                     Number(2),
+    Show_Id                                   Number(5) Not Null,
+    Customer_Id                               Number(5) Not Null, 
+    employee_id                               NUMBER(5) NOT NULL,
+    booking_canceled                          CHAR(1 BYTE)
+);
+
+
+ALTER TABLE booking ADD CONSTRAINT booking_pk PRIMARY KEY ( booking_id
+                                                                   );
+
+CREATE TABLE customer (
+    customer_id                               NUMBER(5) NOT NULL,
+    customer_name                             VARCHAR2(50 BYTE),
+    customer_email                            VARCHAR2(50 BYTE),
+    customer_points                           NUMBER(4),
+    Customer_Phone_Number                     Varchar2(20 Byte), 
+    employee_id                               NUMBER(5) NOT NULL
+);
+
+ALTER TABLE customer ADD CONSTRAINT customer_pk PRIMARY KEY ( customer_id );
+
+CREATE TABLE employee (
+    employee_id     NUMBER(5) NOT NULL,
+    employee_name   VARCHAR2(20 BYTE)
+);
+
+
+ALTER TABLE employee ADD CONSTRAINT employee_pk PRIMARY KEY ( employee_id );
+
+CREATE TABLE film (
+    film_id            NUMBER(5) NOT NULL,
+    film_name          VARCHAR2(50 BYTE) NOT NULL,
+    film_description   CLOB,
+    film_duration      NUMBER(3)
+);
+
+
+ALTER TABLE film ADD CONSTRAINT film_pk PRIMARY KEY ( film_id );
+
+CREATE TABLE film_has_type (
+    film_id   NUMBER(5) NOT NULL,
+    type_id   NUMBER(5) NOT NULL
+);
+
+ALTER TABLE film_has_type ADD CONSTRAINT film_has_type_pk PRIMARY KEY ( film_id,
+                                                                        type_id );
+
+CREATE TABLE film_type (
+    type_id     NUMBER(5) NOT NULL,
+    film_type   VARCHAR2(20 BYTE)
+);
+
+ALTER TABLE film_type ADD CONSTRAINT film_type_pk PRIMARY KEY ( type_id );
+
+CREATE TABLE film_workers (
+    worker_id       NUMBER(5) NOT NULL,
+    worker_name    VARCHAR2(50 BYTE) NOT NULL,
+    worker_role    VARCHAR2(50 BYTE) NOT NULL,
+    film_id   NUMBER(5) NOT NULL
+);
+
+ALTER TABLE film_workers
+    ADD CONSTRAINT film_workers_pk PRIMARY KEY (worker_id );
+
+
+CREATE TABLE managment_employee (
+    employee_id   NUMBER(5) NOT NULL
+);
+
+
+ALTER TABLE managment_employee ADD CONSTRAINT managment_employee_pk PRIMARY KEY ( employee_id );
+
+CREATE TABLE reception_employee (
+    employee_id   NUMBER(5) NOT NULL
+);
+
+
+ALTER TABLE reception_employee ADD CONSTRAINT reception_employee_pk PRIMARY KEY ( employee_id );
+
+CREATE TABLE rule_discount (
+    rule_id      NUMBER(5) NOT NULL,
+    discount     NUMBER(2),
+    start_date   DATE,
+    end_date     DATE
+);
+
+
+ALTER TABLE rule_discount ADD CONSTRAINT rule_pk PRIMARY KEY ( rule_id );
+
+CREATE TABLE rule_on_filmtype (
+    rule_id        NUMBER(5) NOT NULL,
+    type_id   NUMBER(5) NOT NULL
+);
+
+
+ALTER TABLE rule_on_filmtype ADD CONSTRAINT rule_on_filmtype_pk PRIMARY KEY ( rule_id,
+                                                                                     type_id );
+
+CREATE TABLE rule_on_points (
+    rule_id   NUMBER(5) NOT NULL,
+    points    NUMBER(5) NOT NULL
+);
+
+
+
+ALTER TABLE rule_on_points ADD CONSTRAINT rule_on_points_pk PRIMARY KEY ( rule_id );
+
+CREATE TABLE seat (
+    seat_id                NUMBER(5) NOT NULL,
+    seat_row               NUMBER(3),
+    seat_number            NUMBER(3),
+    showroom_id   NUMBER(*, 0) NOT NULL
+);
+
+
+
+ALTER TABLE seat ADD CONSTRAINT seat_pk PRIMARY KEY ( seat_id );
+
+Create Table Seat_Price (
+    seat_additional_price   NUMBER(8),
+    seat_id            NUMBER(5) NOT NULL,
+    show_id       NUMBER(5) NOT NULL,
+    seat_price              NUMBER(8),
+    total_price        NUMBER(8),
+    status    CHAR(1 BYTE)
+);
+
+
+ALTER TABLE seat_price ADD CONSTRAINT seat_price_pk PRIMARY KEY ( seat_id,
+                                                                         show_id );
+
+
+CREATE TABLE show_hall (
+    show_id                                   NUMBER(5) NOT NULL,
+    show_date                                 DATE,
+    show_points                               NUMBER(5),
+    showroom_id                      NUMBER(*, 0) NOT NULL,
+    film_id                              NUMBER(5) NOT NULL,
+    show_price                                NUMBER(8), 
+    employee_id   NUMBER(5) NOT NULL
+);
+
+
+
+ALTER TABLE show_hall ADD CONSTRAINT show_hall_pk PRIMARY KEY ( show_id );
+
+CREATE TABLE showroom (
+    showroom_id   NUMBER(5) NOT NULL,
+    showroom_name    VARCHAR2(30 BYTE) NOT NULL	
+);
+
+ALTER TABLE showroom ADD CONSTRAINT showroom_pk PRIMARY KEY ( showroom_id );
+
+ALTER TABLE booked_seats
+    ADD CONSTRAINT booked_seats_booking_fk FOREIGN KEY ( booking_id )
+        REFERENCES booking ( booking_id );
+
+ALTER TABLE booking
+    ADD CONSTRAINT booking_customer_fk FOREIGN KEY ( customer_id )
+        REFERENCES customer ( customer_id );
+
+ALTER TABLE booking
+    ADD CONSTRAINT booking_reception_employee_fk FOREIGN KEY ( employee_id )
+        REFERENCES reception_employee ( employee_id );
+
+ALTER TABLE booking
+    ADD CONSTRAINT booking_show_hall_fk FOREIGN KEY ( show_id )
+        REFERENCES show_hall ( show_id );
+
+
+ALTER TABLE customer
+    ADD CONSTRAINT customer_recep_fk FOREIGN KEY ( employee_id )
+        REFERENCES reception_employee ( employee_id );
+
+ALTER TABLE film_has_type
+    ADD CONSTRAINT film_has_type_film_fk FOREIGN KEY ( film_id )
+        REFERENCES film ( film_id );
+
+ALTER TABLE film_has_type
+    ADD CONSTRAINT film_has_type_film_type_fk FOREIGN KEY ( type_id )
+        REFERENCES film_type ( type_id );
+        
+ALTER TABLE film_workers
+    ADD CONSTRAINT worker_in_film_fk FOREIGN KEY ( film_id )
+        REFERENCES film ( film_id );      
+
+ALTER TABLE managment_employee
+    ADD CONSTRAINT managment_employee_fk FOREIGN KEY ( employee_id )
+        REFERENCES employee ( employee_id );
+
+ALTER TABLE reception_employee
+    ADD CONSTRAINT reception_employee_fk FOREIGN KEY ( employee_id )
+        REFERENCES employee ( employee_id );
+
+ALTER TABLE rule_on_filmtype
+    ADD CONSTRAINT rule_on_film_type_fk FOREIGN KEY ( type_id )
+        REFERENCES film_type ( type_id );
+
+ALTER TABLE rule_on_filmtype
+    ADD CONSTRAINT rule_on_filmtype_rule_fk FOREIGN KEY ( rule_id )
+        REFERENCES rule_discount ( rule_id );
+
+ALTER TABLE rule_on_points
+    ADD CONSTRAINT rule_on_points_rule_fk FOREIGN KEY ( rule_id )
+        REFERENCES rule_discount ( rule_id );
+
+ALTER TABLE seat_price
+    ADD CONSTRAINT seat_price_seat_fk FOREIGN KEY ( seat_id )
+        REFERENCES seat ( seat_id );
+
+ALTER TABLE seat_price
+    ADD CONSTRAINT seat_price_show_hall_fk FOREIGN KEY ( show_id )
+        REFERENCES show_hall ( show_id );
+
+ALTER TABLE seat
+    ADD CONSTRAINT seat_showroom_fk FOREIGN KEY ( showroom_id )
+        REFERENCES showroom ( showroom_id );
+
+
+ALTER TABLE show_hall
+    ADD CONSTRAINT show_hall_film_fk FOREIGN KEY ( film_id )
+        REFERENCES film ( film_id );
+
+
+ALTER TABLE show_hall
+    ADD CONSTRAINT show_hall_ma_emp_fk FOREIGN KEY ( employee_id )
+        REFERENCES managment_employee (employee_id );
+
+ALTER TABLE show_hall
+    ADD CONSTRAINT Show_Hall_Showroom_Fk FOREIGN KEY ( Showroom_Id )
+        REFERENCES showroom ( showroom_id );

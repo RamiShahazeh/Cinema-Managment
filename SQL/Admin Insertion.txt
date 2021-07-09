@@ -1,0 +1,76 @@
+INSERT INTO Showroom (Showroom_Id,showroom_name)
+VALUES (1,'A');
+INSERT INTO Showroom (Showroom_Id,showroom_name)
+VALUES (2,'B');
+INSERT INTO Showroom (Showroom_Id,showroom_name)
+Values (3,'C');
+
+/****************************************************************/
+
+
+INSERT INTO seat (seat_row, seat_number,showroom_id)
+VALUES (1,1,1);
+INSERT INTO seat (seat_row, seat_number,showroom_id)
+VALUES (1,2,1);
+INSERT INTO seat (seat_row, seat_number,showroom_id)
+VALUES (1,3,1);
+INSERT INTO seat (seat_row, seat_number,showroom_id)
+VALUES (1,4,1);
+INSERT INTO seat (seat_row, seat_number,showroom_id)
+VALUES (1,5,1);
+INSERT INTO seat (seat_row, seat_number,showroom_id)
+VALUES (2,1,1);
+Insert Into Seat (Seat_Row, Seat_Number,Showroom_Id)
+VALUES (2,2,1);
+INSERT INTO seat (seat_row, seat_number,showroom_id)
+VALUES (2,3,1);
+INSERT INTO seat (seat_row, seat_number,showroom_id)
+VALUES (2,4,1);
+INSERT INTO seat (seat_row, seat_number,showroom_id)
+VALUES (2,5,1);
+INSERT INTO seat (seat_row, seat_number,showroom_id)
+VALUES (3,1,1);
+INSERT INTO seat (seat_row, seat_number,showroom_id)
+VALUES (3,2,1);
+INSERT INTO seat (seat_row, seat_number,showroom_id)
+VALUES (3,3,1);
+INSERT INTO Seat (Seat_Row, Seat_Number,Showroom_Id)
+VALUES (3,4,1);
+INSERT INTO seat (seat_row, seat_number,showroom_id)
+VALUES (3,5,1);
+INSERT INTO seat (seat_row, seat_number,showroom_id)
+VALUES (4,1,1);
+INSERT INTO seat (seat_row, seat_number,showroom_id)
+VALUES (4,2,1);
+INSERT INTO seat (seat_row, seat_number,showroom_id)
+VALUES (4,3,1);
+INSERT INTO seat (seat_row, seat_number,showroom_id)
+VALUES (4,4,1);
+INSERT INTO seat (seat_row, seat_number,showroom_id)
+VALUES (4,5,1);
+INSERT INTO Seat (Seat_Row, Seat_Number,Showroom_Id)
+VALUES (5,1,1);
+INSERT INTO seat (seat_row, seat_number,showroom_id)
+VALUES (5,2,1);
+INSERT INTO seat (seat_row, seat_number,showroom_id)
+VALUES (5,3,1);
+INSERT INTO seat (seat_row, seat_number,showroom_id)
+VALUES (5,4,1);
+INSERT INTO seat (seat_row, seat_number,showroom_id)
+VALUES (5,5,1);
+
+/*********************************************************************/
+
+Insert Into Film_Type (Film_Type) Values ('Action');
+Insert Into Film_Type (Film_Type) Values ('Comedy');
+insert into film_type (film_type) values ('Horror');
+insert into film_type (film_type) values ('SCI-FI');
+
+/*************************************************************************/
+
+INSERT INTO Employee (Employee_name) VALUES ('rami_rec');
+INSERT INTO Employee (Employee_name) VALUES ('rami_man');
+
+INSERT INTO Managment_Employee (Employee_id) VALUES (2);
+
+INSERT INTO reception_Employee (Employee_id) VALUES (1);

@@ -1,0 +1,9 @@
+We tried to make the database a DDL file but it changed the table names to CINEMA.tablename so the SQL is in a seperate txt files.
+first run the "DataBase.txt"
+second run the "seq and tri for ID.txt" (one by one)
+third run the "Database use pro and tri.txt"(one by one)
+forth run the "insert procedures.txt"(one by one)
+last but least run the "Admin Insertion.txt"
+too work with the c# interfaces when you create new use you should put:
+service name : cinema
+username : cinema

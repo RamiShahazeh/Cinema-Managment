@@ -1,0 +1,248 @@
+Create Or Replace Procedure Pr_insert_Booking
+( 
+B_Date      Booking.Booking_At_Date%Type,
+B_Cus_Date  Booking.customer_Paid_Time%Type,
+B_Seats     Booking.Seats%Type,
+B_Showid    Booking.Show_Id%Type,
+B_Cusid     Booking.Customer_Id%Type,
+b_empid     booking.employee_id%type
+)
+Is
+begin
+Insert Into Booking (Booking_At_Date,customer_Paid_Time,Seats,Show_Id,Customer_Id,Employee_Id)
+Values(B_Date,B_Cus_Date,B_Seats,B_Showid,B_Cusid,B_Empid);
+end;
+
+/*************************************************/
+
+Create Or Replace Procedure Pr_insert_Customer
+( 
+C_Name      Customer.CUSTOMER_NAME%Type,
+C_Email     Customer.CUSTOMER_EMAIL%Type,
+C_Phone     Customer.CUSTOMER_PHONE_NUMBER%Type,
+c_empid     CUSTOMER.EMPLOYEE_ID%type
+)
+Is
+Begin
+Insert Into Customer
+(CUSTOMER_NAME,CUSTOMER_EMAIL,CUSTOMER_PHONE_NUMBER,EMPLOYEE_ID)
+Values(C_Name,C_Email,C_Phone,c_empid);
+end;
+
+/*******************************/
+
+Create Or Replace Procedure Pr_insert_Employee
+( 
+C_Id        Employee.Employee_ID%Type,
+C_Name      Employee.Employee_NAME%Type
+)
+Is
+Begin
+Insert Into Employee
+(Employee_ID,Employee_NAME)
+Values(C_Id,C_Name);
+end;
+
+
+/***********************************************/
+
+Create Or Replace Procedure Pr_insert_recEmployee
+( 
+C_Id        Employee.Employee_ID%Type,
+C_Name      Employee.Employee_NAME%Type
+)
+Is
+Begin
+Insert Into Employee
+(Employee_ID,Employee_NAME)
+Values(C_Id,C_Name);
+
+Insert Into Reception_Employee
+(Employee_Id)
+Values(C_Id);
+end;
+
+
+/***************************************************/
+Create Or Replace Procedure Pr_insert_managEmployee
+( 
+C_Id        Employee.Employee_ID%Type,
+C_Name      Employee.Employee_NAME%Type
+)
+Is
+Begin
+Insert Into Employee
+(Employee_ID,Employee_NAME)
+Values(C_Id,C_Name);
+
+Insert Into Managment_Employee
+(Employee_Id)
+Values(C_Id);
+end;
+ 
+/*******************************************/
+
+Create Or Replace Procedure Pr_insert_Film
+( 
+F_Name      Film.Film_Name%Type,
+F_Des       Film.Film_description%Type,
+f_dur       Film.Film_duration%Type
+)
+Is
+Begin
+Insert Into Film
+(Film_Name,Film_Description,Film_Duration)
+Values(F_Name,F_Des,f_dur);
+
+end;
+/**********************************************/
+
+Create Or Replace Procedure Pr_insert_Film_type
+( 
+F_Id        Film.Film_Id%Type,
+F_type      Film_Type.Film_type%Type
+)
+Is
+typeid film_type.type_id%type;
+Begin
+Select Type_Id Into Typeid From Film_Type Where Film_Type = F_Type;
+
+Insert Into Film_Has_Type
+(Film_Id,type_id)
+Values(F_Id,Typeid);
+end;
+
+
+/***************************************************/
+
+Create Or Replace Procedure Pr_insert_Film_workers
+( 	    
+W_Name      Film_Workers.Worker_Name%TYPE,
+W_Role      Film_Workers.Worker_role%TYPE,
+filmid      Film_Workers.film_id%TYPE
+)
+Is
+BEGIN
+
+Insert Into film_workers
+(Worker_Name,Worker_Role,Film_Id)
+Values(W_Name,W_Role,filmid);
+end;
+
+/**************************************/
+
+Create Or Replace Procedure Pr_insert_rule_discount
+( 
+Dis        Rule_Discount.Discount%Type,
+S_Date     Rule_Discount.Start_Date%Type,
+e_date     rule_discount.end_date%type
+)
+Is
+Begin
+Insert Into Rule_Discount
+(Discount,Start_Date,End_Date)
+Values(Dis,S_Date,e_date);
+end;
+/*************************************/
+Create Or Replace Procedure Pr_insert_ruleOnType
+( 
+Dis             Rule_Discount.Discount%TYPE,
+S_Date          Rule_Discount.Start_Date%TYPE,
+e_date          rule_discount.end_date%type,
+typeid          Rule_on_filmtype.type_id%Type
+)
+IS
+r_id Rule_On_Filmtype.Rule_Id%TYPE;
+Begin
+Insert Into Rule_Discount
+(Discount,Start_Date,End_Date)
+VALUES(Dis,S_Date,e_date);
+
+SELECT rule_id INTO r_id FROM rule_discount WHERE 
+discount = Dis
+AND Start_Date = S_Date
+AND End_Date= e_date;
+
+Insert Into Rule_On_Filmtype
+(Rule_Id,type_id)
+Values(r_id,typeid);
+end;
+/*****************************************/
+Create Or Replace Procedure Pr_insert_ruleOnPoints
+( 
+Dis        Rule_Discount.Discount%Type,
+S_Date     Rule_Discount.Start_Date%TYPE,
+e_date     rule_discount.end_date%type,
+min_points          Rule_on_points.points%Type
+)
+IS
+r_id Rule_On_Filmtype.Rule_Id%TYPE;
+Begin
+Insert Into Rule_Discount
+(Discount,Start_Date,End_Date)
+VALUES(Dis,S_Date,e_date);
+
+SELECT rule_id INTO r_id FROM rule_discount  WHERE 
+discount = Dis
+AND Start_Date = S_Date
+AND End_Date= e_date;
+
+Insert Into Rule_on_points
+(Rule_Id,Points)
+Values(r_id,min_points);
+end;
+/************************************************/
+Create Or Replace Procedure Pr_insert_seat
+( 
+S_Row             Seat.Seat_Row%Type,
+S_Num               Seat.Seat_Number%Type,
+Showr_id             Seat.showroom_id%Type
+)
+Is
+Begin
+Insert Into Seat
+(Seat_Row,Seat_Number,Showroom_Id)
+Values(S_Row,S_Num,Showr_id);
+end;
+/******************************************************/
+Create Or Replace Procedure Pr_insert_show
+( 
+S_Date              Show_Hall.Show_Date%Type,
+S_points            show_hall.show_points%Type,
+Showr_Id             Show_Hall.Showroom_Id%Type,
+F_Id                Show_Hall.Film_Id%Type,
+S_Price               Show_Hall.Show_Price%Type,
+em_id                 show_hall.employee_id%Type
+)
+
+Is
+Begin
+Insert Into show_hall
+(Show_Date,Show_Points,Showroom_Id,Film_Id,Show_Price,Employee_Id)
+Values(S_Date,S_points,Showr_id,F_Id,S_Price,em_id);
+end;
+/*********************************************/
+Create Or Replace Procedure Pr_insert_showroom
+( 
+S_Id                showroom.showroom_Id%Type,
+S_name              showroom.showroom_name%Type
+)
+
+Is
+Begin
+Insert Into showroom
+(showroom_Id,showroom_name)
+Values(S_Id,S_name);
+end;
+/*********************************************/
+create or replace Procedure Pr_insert_booked_seat
+( 
+seatid            Seat.Seat_id%TYPE,
+bookedid              booking.booking_id%Type
+)
+Is
+BEGIN
+INSERT INTO booked_seats
+(seat_id,booking_id)
+Values(seatid,bookedid);
+end;

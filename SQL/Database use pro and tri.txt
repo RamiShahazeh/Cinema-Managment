@@ -1,0 +1,525 @@
+
+CREATE OR REPLACE PROCEDURE Check_Discount_On_Type (filmid film.film_id%TYPE ,Showdate IN Show_hall.Show_Date%TYPE,
+res OUT INTEGER )
+is
+
+Cursor  Test_Cur Is Select Rule_Id From Rule_Discount Join Rule_On_Filmtype Using(Rule_Id)
+Where Showdate Between Rule_discount.Start_Date And Rule_discount.End_Date
+and type_id in( select type_id from film join film_has_type using(film_id));
+
+
+Ruleid Rule_discount.Rule_Id%Type;
+
+Begin
+Open Test_Cur;
+Fetch Test_Cur Into Ruleid;
+
+If Test_Cur%Notfound Then
+    Res := 0;
+Else
+    Res := 1;
+End If;
+Close Test_Cur;
+
+End;
+
+/**************************************************************/
+CREATE OR REPLACE PROCEDURE Check_Discount_On_points (cus_points customer.customer_points%TYPE,Showdate IN Show_hall.Show_Date%TYPE,
+res OUT INTEGER )
+is
+Cursor  Test_Cur Is Select Rule_Id From Rule_Discount Join Rule_On_Points Using(Rule_Id)
+Where Showdate Between Rule_discount.Start_Date And Rule_discount.End_Date
+and cus_points >= points;
+
+Ruleid Rule_discount.Rule_Id%Type;
+
+Begin
+Open Test_Cur;
+Fetch Test_Cur Into Ruleid;
+
+If Test_Cur%Notfound Then
+    Res := 0;
+Else
+    Res := 1;
+End If;
+Close Test_Cur;
+
+end;
+
+/**************************************************************/
+CREATE OR REPLACE PROCEDURE Check_Discount_On_all_shows (Showdate IN Show_hall.Show_Date%TYPE,
+Res OUT Integer) is
+
+
+Cursor  Test_Cur Is Select Rule_Id From Rule_discount
+Where 
+Rule_Id Not In (
+    Select Rule_Id From Rule_discount Join Rule_On_FilmType Using(Rule_Id)
+            )
+And
+Rule_Id not in (
+    Select Rule_Id From Rule_discount Join Rule_On_points Using(Rule_Id)
+            )
+and
+Showdate Between Rule_discount.Start_Date And Rule_discount.End_Date;
+
+
+Ruleid Rule_discount.Rule_Id%Type;
+
+Begin
+Open Test_Cur;
+Fetch Test_Cur Into Ruleid;
+
+If Test_Cur%Notfound Then
+    Res := 0;
+Else
+    Res := 1;
+End If;
+Close Test_Cur;
+
+end;
+
+
+/**************************************************************/
+/* setting the seat price if there is a discount on the show ( on all shows or on type ) */
+
+
+
+
+Create Or Replace Procedure Pr_Seat_Price ( Showid In Show_Hall.Show_Id%Type ,Showroomid In Show_Hall.Showroom_Id%Type,
+ filmid show_hall.film_id%type, showdate in Show_hall.show_date%type, showprice in Show_hall.show_price%type) is
+
+Cursor Seatid_Cur Is Select Seat_Id From Seat Where Showroom_Id=Showroomid;
+Cursor Dis_Cur Is Select Discount From Rule_discount Where
+Showdate Between Rule_discount.Start_Date And Rule_discount.End_Date;
+
+
+totprice number(9);
+s_id Seat.Seat_Id%Type;
+Dis Rule_discount.Discount%Type :=0;
+ruleid Rule_discount.Rule_Id%TYPE := NULL;
+res1 integer;
+
+begin
+
+Open Dis_Cur;
+Fetch Dis_Cur Into Dis;
+IF(Dis_Cur%found) THEN
+Check_Discount_On_all_shows(Showdate,res1);
+If res1 =1 Then
+    Totprice := Showprice - (Showprice * Dis)/100;
+
+ELSE
+    Check_Discount_On_Type(filmid,Showdate,res1);
+    If res1=1 then
+        Totprice := Showprice - (Showprice * Dis)/100;
+    End If;
+ 
+End If;
+
+Else
+    Totprice := Showprice;
+end if;
+
+
+open seatid_cur;
+Loop
+
+fetch seatid_cur into s_id;
+exit when SEATID_CUR%NOTFOUND;
+insert into SEAT_PRICE (SEAT_ID,SEAT_ADDITIONAL_PRICE,SHOW_ID,SEAT_PRICE,TOTAL_PRICE,STATUS)
+values (s_id,0,showid,showprice,totprice,1);
+
+end loop;
+close seatid_cur;
+
+end;
+
+/**************************************************************/
+Create Or Replace Trigger Tr_Initiat_Seat_Price After
+Insert On Show_hall For Each Row  Begin 
+pr_seat_price(:new.show_id,:new.showroom_id,:new.film_id,:new.show_date,:new.show_price);
+
+end;
+/**************************************************************/
+create or replace Procedure Add_Show_Points(C_Paidtime In Booking.Customer_Paid_Time%Type
+, C_Id In Customer.Customer_Id%Type, S_Id In Show_hall.Show_Id%Type)
+Is
+
+Cursor Cp Is Select Customer_Points From Customer Where Customer_Id =C_Id;
+v_showpoints Show_hall.show_points%type;
+V_customer_points customer.customer_points%type;
+Begin 
+
+Select Show_Points Into V_Showpoints From Show_hall Where Show_Id= S_Id;
+
+if(C_Paidtime is not null)
+Then
+
+    Open Cp;
+    Fetch Cp Into V_customer_points;
+    If(cp%Found) Then
+
+    V_Customer_Points :=  v_showpoints + V_customer_points;
+
+    Update Customer
+    Set Customer_Points = V_Customer_Points 
+    Where Customer_Id = C_Id;
+    Else
+
+
+    Update Customer
+    Set Customer_Points = v_showpoints 
+    Where Customer_Id = C_Id;
+    end if;
+
+End If;
+End;
+/**************************************************************/
+Create Or Replace Trigger Tr_Adding_Show_Points after
+Insert On Booking
+    For Each Row 
+  begin  
+add_show_points(:new.customer_paid_time,:new.customer_id,:new.show_id);
+
+end;
+/**************************************************************/
+Create Or Replace Trigger Tr_Change_Seat_Status After
+insert on BOOKED_SEATS
+    for each row
+declare 
+showid integer;
+begin 
+select show_id into showid from booking where booking_id = :new.booking_id;
+Update  Seat_price 
+set STATUS = 0
+where seat_id = :new.seat_id and show_id = showid;
+end;
+/**************************************************************/
+
+create or replace procedure validate_user/* 0 false, 1 managment, 2 reception*/
+( 
+e_id                employee.employee_Id%TYPE,
+e_name              employee.employee_name%TYPE,
+re_value out integer
+)
+Is
+Res Integer ;
+Emp_Id Employee.Employee_Id%Type;
+emp_name Employee.Employee_name%Type;
+Cursor Test_Man  Is  Select Employee_Id, Employee_Name From Employee Join Managment_Employee Using (Employee_Id)
+Where Employee_Id = E_Id
+and employee_name = e_name;
+
+Cursor Test_rec  Is  Select Employee_Id,Employee_Name From Employee Join Reception_Employee Using (Employee_Id)
+Where Employee_Id = E_Id
+And Employee_Name = E_Name;
+Begin
+    Open Test_Man;
+    Fetch Test_Man Into emp_id,emp_name;
+    If(Test_Man%Found) Then
+    Res :=1;
+    Else
+            Open Test_Rec;
+            Fetch Test_rec Into emp_id,emp_name;
+            If(Test_rec%Found) Then
+            Res :=2;
+
+            Else
+                Res :=0;
+            END IF;
+    END IF;
+re_value := Res;
+end;
+
+
+/**************************************************/
+
+CREATE OR REPLACE PROCEDURE add_seat_additional_price 
+(seatid seat.seat_id%TYPE,
+showid show_hall.show_id%TYPE,
+addprice NUMBER)
+IS
+BEGIN
+    UPDATE seat_price SET
+    SEAT_ADDITIONAL_PRICE = addprice,
+    total_price = addprice + total_price
+    WHERE seat_id = seatid
+    and show_id =showid;
+    
+    
+end;
+
+/*************************************************/
+
+CREATE OR REPLACE PROCEDURE get_showroom_id
+(
+    showid IN show_hall.show_id%TYPE,
+    showroomid OUT INTEGER
+)
+IS
+BEGIN
+    select showroom_id into showroomid from show_hall join showroom using(showroom_id) where show_hall.show_id = showid;
+END;
+
+/******************************************************/
+CREATE OR REPLACE PROCEDURE get_available_seats
+(
+    showid IN show_hall.show_id%TYPE,
+    av_seats OUT INTEGER
+)
+IS
+srid INTEGER;
+numofseats integer :=0;
+seatid seat.seat_id%type;
+BEGIN
+get_showroom_id(showid,srid);
+        declare
+        CURSOR Seatid_Cur IS SELECT Seat_Id FROM Seat JOIN seat_price USING(seat_id)
+        WHERE showroom_id = srid
+        And status =1;
+        BEGIN
+        OPEN Seatid_Cur;
+        loop
+            FETCH Seatid_Cur INTO seatid;
+            EXIT WHEN Seatid_Cur%NOTFOUND;
+            numofseats :=numofseats +1;
+            END LOOP;
+            CLOSE Seatid_Cur;
+        END;
+     av_seats :=  numofseats;
+    
+END;
+/***********************************/
+
+CREATE OR REPLACE PROCEDURE get_seat_row
+(
+    seatid IN seat.seat_id%TYPE,
+    seatrow OUT seat.seat_row%TYPE
+)
+IS
+BEGIN
+select seat_row into seatrow from seat where seat_id = seatid;   
+END;
+
+/***********************************/
+
+CREATE OR REPLACE PROCEDURE get_seat_number
+(
+    seatid IN seat.seat_id%TYPE,
+    seatnum OUT seat.seat_Number%TYPE
+)
+IS
+BEGIN
+SELECT  seat_Number INTO seatnum  FROM seat WHERE seat_id = seatid;   
+END;
+
+/**************************************/
+
+create or replace Procedure Pr_get_booking_id
+(
+bookedid    out          booking.booking_id%Type
+)
+Is
+BEGIN
+select  last_number  into bookedid from user_sequences where sequence_name = 'SQ_BOOKING';
+END;
+
+/************************************************/
+
+CREATE OR REPLACE PROCEDURE remove_customer_added_points
+(
+showid IN show_hall.show_id%TYPE,
+customerid IN customer.customer_id%TYPE
+)
+IS
+showpoints integer;
+BEGIN
+SELECT show_points INTO showpoints FROM show_hall WHERE show_hall.show_id = showid;
+UPDATE customer SET customer_points = customer_points - showpoints
+where customer_id = customerid;
+
+end;
+
+/*************************************************************/
+
+Ccreate or replace PROCEDURE get_customer_interest 
+( 
+customerid customer.customer_id%TYPE,
+f_type OUT film.film_id%TYPE
+)
+IS
+begin
+SELECT max(film_id) into f_type FROM booking JOIN show_hall USING(show_id) JOIN film_has_type USING(film_id) JOIN film_type
+using(TYPE_ID) where CUSTOMER_ID = customerid 
+GROUP BY film_id;
+end;
+
+/**************************************/
+CREATE OR REPLACE PROCEDURE update_discount
+(
+ruleid  rule_discount.rule_id%TYPE,
+dis      rule_discount.discount%TYPE,
+s_date  rule_discount.start_date%TYPE,
+e_date rule_discount.end_date%TYPE
+)
+IS
+BEGIN
+UPDATE  rule_discount SET  discount = dis , start_date =  s_date,
+end_date =  e_date  
+WHERE rule_id = ruleid;
+end;
+/***************************************************/
+create or replace PROCEDURE update_discount_points
+(
+ruleid  rule_discount.rule_id%TYPE,
+dis      rule_discount.discount%TYPE,
+s_date  rule_discount.start_date%TYPE,
+e_date rule_discount.end_date%TYPE,
+newpoints rule_on_points.points%TYPE
+)
+IS
+RUID integer;
+begin
+UPDATE_DISCOUNT(RULEID,DIS,S_DATE,E_DATE);
+UPDATE  rule_on_points SET  points =  newpoints 
+where RULE_ID = RULEID;
+end;
+
+/********************************************************/
+create or replace PROCEDURE update_discount_type
+(
+ruleid  rule_discount.rule_id%TYPE,
+dis      rule_discount.discount%TYPE,
+s_date  rule_discount.start_date%TYPE,
+e_date rule_discount.end_date%TYPE,
+typename  film_type.film_type%TYPE
+)
+IS
+typeid INTEGER;
+
+BEGIN
+update_discount(ruleid,dis,s_date,e_date);
+select type_id into typeid from film_type where film_type = typename;
+UPDATE  rule_on_filmtype SET  type_id =  typeid 
+WHERE rule_id = ruleid;
+end;
+
+/*****************************************************/
+create or replace PROCEDURE cancel_customer
+(
+SEATS in BOOKING.SEATS%type,
+CUSTOMERID in CUSTOMER.CUSTOMER_ID%type,
+res OUT integer
+)
+is
+CURRENT_SEATS integer := 0;
+b_id integer;
+S_ID integer;
+X integer :=0 ;
+BOOKID integer;
+showid integer;
+
+cursor cur_bookingID is select BOOKING_ID from BOOKING join BOOKED_SEATS using(BOOKING_ID) where SHOW_ID =1
+minus 
+select BOOKING_ID from BOOKING join BOOKED_SEATS using(BOOKING_ID) where SHOW_ID =1
+and CUSTOMER_PAID_TIME  between '01-JAN-2019' and '01-JAN-2022';
+
+cursor cur_seats (bookID integer) is select SEAT_ID from BOOKED_SEATS join BOOKING using(BOOKING_ID)
+where BOOKING_ID =bookID;
+
+begin
+open cur_bookingID;
+loop
+    fetch cur_bookingID into  B_ID;
+    exit when cur_bookingID%NOTFOUND;
+    CURRENT_SEATS:= CURRENT_SEATS + 1;
+    x := 0;
+    if(SEATS = CURRENT_SEATS) then
+    X := 1;
+    bookID:=B_ID;
+    exit;
+    end if;
+end loop;
+close cur_bookingID;
+
+select show_id into showid from show_hall join booking using(show_id) where booking_id = bookID;
+CURRENT_SEATS :=0;
+res := x ;
+if(x = 1) then
+open cur_bookingID;
+loop
+    fetch cur_bookingID into  B_ID;
+        exit when cur_bookingID%NOTFOUND;
+        if(SEATS = CURRENT_SEATS) then
+         exit;
+         else
+            open CUR_SEATS(B_ID);
+                fetch CUR_SEATS into  s_id;
+                exit when CUR_SEATS%NOTFOUND;
+                    update BOOKING set BOOKING_CANCELED = 1 where BOOKING_ID = B_ID;
+                    delete from BOOKED_SEATS where BOOKING_ID = B_ID;
+                    update Seat_price set status = 1 where seat_id = s_id and show_id = showid;
+            close CUR_SEATS;
+            res := x; 
+        end if ;
+        CURRENT_SEATS:= CURRENT_SEATS + 1;
+end loop;
+close cur_bookingID;
+end if;
+end;
+
+/*********************************************************/
+create or replace PROCEDURE Discount_On_points
+(
+customerid in CUSTOMER.CUSTOMER_ID%type,
+showdate in show_hall.show_date%type,
+bookingid in booking.booking_ID%type
+)
+is
+CUSTOMERPOINTS integer;
+SHOWPOINTS integer;
+minPoints integer;
+x1 integer;
+X2 integer;
+x3 integer;
+DIS integer;
+NEWPOINTS integer;
+TOTALPRICE integer;
+SHOWPRICE integer;
+SEATID integer;
+FILMID integer;
+SHOWid integer;
+
+
+cursor getSeats is select seat_id from booked_seats where booking_id = bookingid;
+begin
+
+select show_id into showid from booking where booking_id = bookingid;
+select FILM_ID into FILMID from SHOW_HALL where SHOW_ID = SHOWID;
+select SHOW_POINTS, SHOW_PRICE into  SHOWPOINTS, SHOWPRICE from SHOW_HALL where SHOW_ID = SHOWID;
+select CUSTOMER_POINTS into CUSTOMERPOINTS from CUSTOMER where CUSTOMER_ID = CUSTOMERID;
+
+CHECK_DISCOUNT_ON_TYPE (FILMID ,SHOWDATE,X1);
+CHECK_DISCOUNT_ON_POINTS (CUSTOMERPOINTS,SHOWDATE,X2);
+CHECK_DISCOUNT_ON_ALL_SHOWS (SHOWDATE,X3);
+if(x1=0 and x2=1 and x3=0) then
+
+    select DISCOUNT, POINTS into DIS, MINPOINTS from RULE_DISCOUNT join RULE_ON_POINTS using(RULE_ID)
+    where showdate between start_date and end_date;
+    if(CUSTOMERPOINTS - SHOWPOINTS > 0 ) then
+        NEWPOINTS :=CUSTOMERPOINTS - SHOWPOINTS;
+        TOTALPRICE := SHOWPRICE - (SHOWPRICE * DIS)/100;
+ 
+ 
+        open getSeats;
+        loop
+            fetch getSeats into  seatid;
+            exit when GETSEATS%NOTFOUND;
+            update seat_price set total_price = TOTALPRICE where show_id = showid and seat_id = seatid; 
+        end loop;
+        close getSeats;
+        update CUSTOMER set CUSTOMER_POINTS = NEWPOINTS where CUSTOMER_ID = CUSTOMERID;
+    end if;
+end if;
+end;

@@ -1,0 +1,66 @@
+/* auto increment for all the id */
+
+create sequence  sq_seat minvalue 1 start with 1 nocache order;
+
+create or replace trigger tr_seat_auto_incr Before
+insert on seat for each row when (new.seat_id is null) begin :new.seat_id := sq_seat.nextval;
+end;
+
+create sequence  sq_film minvalue 1 start with 1 nocache order;
+
+create or replace trigger tr_film_auto_incr Before
+insert on film for each row when (new.film_id is null) begin :new.film_id := sq_film.nextval;
+end;
+
+create sequence  sq_show minvalue 1 start with 1 nocache order;
+
+create or replace trigger tr_show_auto_incr Before
+insert on show_hall for each row when (new.show_id is null) begin :new.show_id := sq_show.nextval;
+end;
+
+create sequence  sq_employee minvalue 1 start with 1 nocache order;
+
+create or replace trigger tr_employee_auto_incr Before
+insert on employee for each row when (new.employee_id is null) begin :new.employee_id := sq_employee.nextval;
+end;
+
+create sequence  sq_booking minvalue 1 start with 1 nocache order;
+
+create or replace trigger tr_booking_auto_incr Before
+INSERT ON booking FOR EACH ROW WHEN (NEW.booking_id IS NULL) BEGIN :NEW.booking_id := sq_booking.NEXTVAL;
+:new.booking_canceled := 0;
+end;
+
+create sequence  sq_customer minvalue 1 start with 1 nocache order;
+
+create or replace trigger tr_customer_auto_incr Before
+Insert On Customer For Each Row When (New.Customer_Id Is Null) Begin
+:New.Customer_Id := Sq_Customer.Nextval;
+:new.Customer_points := 0;
+end;
+
+create sequence  sq_rule minvalue 1 start with 1 nocache order;
+
+create or replace trigger tr_rule_auto_incr Before
+insert on rule_discount for each row when (new.rule_id is null) begin :new.rule_id := sq_rule.nextval;
+end;
+
+create sequence  sq_showroom minvalue 1 start with 1 nocache order;
+
+create or replace trigger tr_showroom_auto_incr Before
+insert on showroom for each row when (new.showroom_id is null) begin :new.showroom_id := sq_showroom.nextval;
+end;
+
+
+create sequence  sq_filmtype minvalue 1 start with 1 nocache order;
+Create Or Replace Trigger Tr_Type_Auto_Incr Before
+insert on film_type for each row when (new.type_id is null) begin :new.type_id := sq_filmtype.nextval;
+end;
+
+create sequence  sq_fworker minvalue 1 start with 1 nocache order;
+
+CREATE OR REPLACE TRIGGER tr_fworker_auto_incr BEFORE
+insert on film_workers for each row when (new.worker_id is null) begin :new.worker_id := sq_fworker.nextval;
+end;
+          
+/*********************************************************/
